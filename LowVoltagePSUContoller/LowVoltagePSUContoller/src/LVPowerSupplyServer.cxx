@@ -8,7 +8,7 @@
 int main( int argc, char* argv[] )
 {
 
-
+	//test
 
 	std::string serverName; //= "LOWVOLTAGE_NINO";
 	char* ipAddress;
