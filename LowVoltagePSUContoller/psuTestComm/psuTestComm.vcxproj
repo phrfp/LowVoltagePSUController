@@ -39,8 +39,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Program Files\dim_v20r7\dim;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files\dim_v20r7\bin32;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\phrfp\Documents\Software\dim_v20r7\dim;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\phrfp\Documents\Software\dim_v20r7\bin32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
