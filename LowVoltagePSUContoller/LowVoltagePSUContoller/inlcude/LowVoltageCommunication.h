@@ -3,12 +3,13 @@
 #include <WinSock2.h>
 #include <Windows.h>
 #include <WS2tcpip.h>
-
+#include <string>
 /**
 	Class used to create a socket and connect it using TCP/IP to a PSU at a ceratin IP address
 	then allow messages to be sent to the PSU and replies extracted
 */
-
+/**Could really do with refactoring alot of code is repeated it is only the string going to the PSU that is changing
+*/
 
 class LowVoltageCommunication
 {
@@ -17,7 +18,7 @@ public:
 	virtual ~LowVoltageCommunication(void);
 	
 	/** Sets the IP addess of the device */
-	void IpAddressOfServer(char* ipaddress);
+	void IpAddressOfServer(std::string ipaddress);
 
 	/** Creates tests the IP address of the PSU and creates a socket and connects it to the PSU */
 	bool InitialiseSocket();
@@ -30,10 +31,12 @@ public:
 	/** setting new voltage and reading commands **/
 	bool SetVoltage( float newVoltage );
 	float VoltageReading();
+	float VoltageSetPointReading();
 
 	/** setting new current and reading commands **/
 	bool SetCurrent( float newCurrent );
 	float CurrentReading();
+	float CurrentLimitReading();
 
 	/** setting power state and reading power state **/
 	bool SetPowerState( short newPowerState );
@@ -52,7 +55,7 @@ private:
 
 	/** variables to store the current data values **/
 	SOCKET m_socket; //Hold the socket at member varible
-	char* m_ipaddressOfServer; //Hold ip address 
+	std::string m_ipaddressOfServer; //Hold ip address 
 
 };
 

@@ -22,10 +22,10 @@ void EventTimer::SetEvtObject( LowVoltageCommand* pointerToActionObject ){
 	mp_LVControlObj = pointerToActionObject;
 
 }
-void EventTimer::timeHandler(){
+void EventTimer::timeHandler( bool debug ){
 
 	std::cout<<"Checking PS"<<std::endl;
-	mp_LVControlObj->Update();
+	mp_LVControlObj->Update( debug );
 	this->StartTimer();
 
 }

@@ -34,7 +34,7 @@ bool LowVoltageCommunication::InitialiseSocket(void){
 
 	//Get infor from the server - need ip of server the port number the host address infor and the result that is acquried from the server
 
-	int iresult = getaddrinfo( m_ipaddressOfServer, "9221", &hints, &result); //169.254.227.33 - for inst 1 00-50-C2-F9-56-34, 169.254.30.174 - for inst 2 00-50-C2-F9-56-35
+	int iresult = getaddrinfo( m_ipaddressOfServer.c_str(), "9221", &hints, &result); //169.254.227.33 - for inst 1 00-50-C2-F9-56-34, 169.254.30.174 - for inst 2 00-50-C2-F9-56-35
 	
 	if(iresult != 0 ){//if this is unsucessful cleanup - might need to add some message to the server create a set of failure codes
 	
@@ -69,7 +69,7 @@ bool LowVoltageCommunication::InitialiseSocket(void){
 
 }
 
-void LowVoltageCommunication::IpAddressOfServer(char* ipaddress){
+void LowVoltageCommunication::IpAddressOfServer(std::string ipaddress){
 
 	m_ipaddressOfServer = ipaddress; // set the ip address of the psu
 }
@@ -105,6 +105,48 @@ bool LowVoltageCommunication::SetVoltage( float newVoltage ){
 	}
 
 	return true;
+}
+
+float LowVoltageCommunication::VoltageSetPointReading()
+{
+	// Voltage query command V1O? checkes the output voltage NOT the setpoint
+	char voltageQuery[] = "V1?"; //command to send to the PSU
+
+	int sendVal = SOCKET_ERROR; //use same trick as before to check that the query is sent
+
+	while(sendVal == SOCKET_ERROR){
+			
+		sendVal = send(m_socket, voltageQuery, strlen(voltageQuery)+1, 0);
+		if( (sendVal ==0) || (sendVal == WSAECONNRESET) || (sendVal == WSAETIMEDOUT) ){
+		
+			std::cout<<"Error sending command to PSU"<<std::endl;
+			return -999; // code retruned if communication fails
+			
+		}
+	}
+
+	//Move on to the recieved response
+	int recVal = SOCKET_ERROR;
+	char psuResponse[BUFFERSIZE]; // variable to hold the response
+
+	while(recVal == SOCKET_ERROR){//need while loop so that the response is picked up as if the recv command does not coinside with the PSU response the message will be lost
+			
+		recVal = recv(m_socket, psuResponse, BUFFERSIZE, 0);
+
+		if( (recVal ==0) || (recVal == WSAECONNRESET) || (recVal == WSAETIMEDOUT) ){
+		
+			std::cout<<"Error receving reply from PSU"<<std::endl;
+			return -999; //again the error code for failed comm is -999
+			
+		}
+	}
+
+	float voltage = this->PSUStringParser( psuResponse, 2 ); //Parses the message from the PSU and converts it to a float
+
+	//some info for the user
+	std::cout<<"Voltage set point is: "<<voltage<<std::endl;
+
+	return voltage; //return the voltage
 }
 
 float LowVoltageCommunication::VoltageReading()
@@ -149,7 +191,6 @@ float LowVoltageCommunication::VoltageReading()
 	return voltage; //return the voltage
 }
 
-
 bool LowVoltageCommunication::SetCurrent( float newCurrent ){
 	
 	/**Function works the same way as the setvoltage function see that for comments */
@@ -171,6 +212,47 @@ bool LowVoltageCommunication::SetCurrent( float newCurrent ){
 	}
 
 	return true;
+}
+
+float LowVoltageCommunication::CurrentLimitReading(){
+
+	/** function works the same as the currentvoltagereading function  see that for comments*/ 
+
+	char currentQuery[] = "I1?"; // Query for the current output in Amps of the PSU
+
+	int sendVal = SOCKET_ERROR;
+
+	while(sendVal == SOCKET_ERROR){
+			
+		sendVal = send(m_socket, currentQuery, strlen(currentQuery)+1, 0);
+		if( (sendVal ==0) || (sendVal == WSAECONNRESET) || (sendVal == WSAETIMEDOUT) ){
+		
+			std::cout<<"Error sending command to PSU"<<std::endl;
+			return -999;
+			
+		}
+	}
+
+	int recVal = SOCKET_ERROR;
+	char psuResponse[BUFFERSIZE];
+
+	while(recVal == SOCKET_ERROR){
+			
+		recVal = recv(m_socket, psuResponse, BUFFERSIZE, 0);
+
+		if( (recVal ==0) || (recVal == WSAECONNRESET) || (recVal == WSAETIMEDOUT) ){
+		
+			std::cout<<"Error receving reply from PSU"<<std::endl;
+			return -999;
+			
+		}
+	}
+
+	float current = this->PSUStringParser( psuResponse, 2 );
+
+	std::cout<<"Current limit setpoint is: "<<current<<std::endl;
+
+	return current;
 }
 
 float LowVoltageCommunication::CurrentReading(){
@@ -235,6 +317,7 @@ bool LowVoltageCommunication::SetPowerState( short newPowerState ){
 	return true;
 
 }
+
 short LowVoltageCommunication::CurrentPowerState(){
 	
 	char currentQuery[] = "OP1?"; //Check the whether the PSU has its output turned on or off
@@ -289,13 +372,14 @@ float LowVoltageCommunication::PSUStringParser(char *psuResponse, int queryType 
 
 	std::getline( responseStream, firstLineRes ); // from the response extract the first line
 
-	//std::cout<< firstLineRes << std::endl;
+	std::cout<< firstLineRes << std::endl;
 	std::string numStr; //String that contains the numeriacl reponse from the PSU - old intrested in numerical value at the moment...
 	std::string::size_type len = std::string::npos; //length of the line
 
 	if(queryType == 0 ){ numStr = firstLineRes.substr(0, (len - 1) );} // if voltage or current is being queried need to remove unit
 	else if( queryType == 1 ){ numStr = firstLineRes; } //for power just need the first line
-	//std::cout<< numStr <<std::endl;
+	else if( queryType == 2){ numStr = firstLineRes.substr(3, len ); }
+	std::cout<< numStr <<std::endl;
 
 	std::stringstream numSS( numStr ); //Create a stream object from the number string
 

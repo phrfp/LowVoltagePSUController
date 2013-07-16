@@ -19,16 +19,28 @@ LowVoltageCommand::LowVoltageCommand( std::string dimServerName )
 	 std::string refreashcmdName = dimServerName + "/REFREASH_DATA_VARIABLES";
 	 mp_refreashCmd = new DimCommand( refreashcmdName.c_str(), "C", this );
 
+	 std::string queryPSUSettingsCmd = dimServerName + "/QUERY_PSU_SETTINGS";
+	 mp_querySettingsCmd = new DimCommand( queryPSUSettingsCmd.c_str(), "C", this );
+
 	 /** Set Defualts **/
 	 m_voltage = 0.0;
 	 m_current = 0.0;
+	 m_voltage_setPoint = 0.0;
+	 m_current_limit = 0.0;
 	 m_powerState = 0;
+	 m_debug_state=true;
 
 	 std::string vserviceName = dimServerName + "/CURRENT_VOLTAGE";
 	 mp_voltageService = new DimService( vserviceName.c_str(), m_voltage );
 
 	 std::string iserviceName = dimServerName + "/CURRENT_CURRENT";
 	 mp_currentService = new DimService( iserviceName.c_str(), m_current);
+
+	 std::string v_setpoint_serviceName = dimServerName + "/VOLTAGE_SETPOINT";
+	 mp__setPoint_voltageService = new DimService( v_setpoint_serviceName.c_str(), m_voltage_setPoint );
+
+	 std::string i_current_limit_serviceName = dimServerName + "/CURRENT_LIMIT_SETPOINT";
+	 mp_setPoint_currentService = new DimService( i_current_limit_serviceName.c_str(), m_current_limit);
 
 	 std::string pserviceName = dimServerName + "/CURRENT_POWER_STATE";
 	 mp_powerStateService = new DimService( pserviceName.c_str() , m_powerState);
@@ -51,6 +63,8 @@ LowVoltageCommand::~LowVoltageCommand(void)
 	 delete mp_voltageService; 
 	 delete mp_currentService;
 	 delete mp_powerStateService;
+
+	 delete mp_querySettingsCmd;
 
 	 delete mp_lvComLink;
 
@@ -241,13 +255,16 @@ void LowVoltageCommand::commandHandler(void)
 		}
 		else if( refreashCommand == "POWERSTATE" ){
 			//See above for comments on what the next lines do...
+			
 			if( mp_lvComLink->ConnectToDevice() ){
-				m_powerState = mp_lvComLink->CurrentPowerState();
+
+				m_powerState = mp_lvComLink->CurrentPowerState();	
+				
 				if( m_powerState != -999 ) {
 					mp_powerStateService->updateService( m_powerState );
 				}
 				else{
-					//error handling...
+					mp_powerStateService->updateService( m_powerState );
 				}
 			}
 			else{
@@ -293,15 +310,66 @@ void LowVoltageCommand::commandHandler(void)
 			std::cout<<"Command not supported the options are: ALL, POWERSTATE, VOLTAGE, CURRENT"<<std::endl;
 		}
 	}
+	else if( currCmd == mp_querySettingsCmd){
+		//Get query command and construct string object
+		std::string queryCommand( mp_querySettingsCmd->getString() );
+		std::cout<<"Query command: "<<queryCommand<<std::endl;
+		/*Options are: 
+			1) QI0SETPOINT - what is the current limit
+			2) QV0SETPOINT - what is the voltage set point
+		*/
+		if( queryCommand == "QI0SETPOINT"){
+
+			//See above for comments on what the next lines do...
+			if( mp_lvComLink->ConnectToDevice() ){
+				
+				m_current_limit = mp_lvComLink->CurrentLimitReading();
+				if( m_current_limit != -999 ){
+					mp_setPoint_currentService->updateService( m_current_limit ); 
+				}
+				else{
+					//error handling
+				}	
+			}
+			else{
+				//error handling...
+			}
+
+		}
+		else if( queryCommand == "QV0SETPOINT" ){
+
+			//See above for comments on what the next lines do...
+			if( mp_lvComLink->ConnectToDevice() ){
+				
+				m_voltage_setPoint = mp_lvComLink->VoltageSetPointReading();
+				if( m_voltage_setPoint != -999 ){
+					mp__setPoint_voltageService->updateService( m_voltage_setPoint ); 
+				}
+				else{
+					//error handling
+				}	
+			}
+			else{
+				//error handling...
+			}
+
+
+		}
+		else{
+			//output if string input is not of the valid form
+			std::cout<<"Command not supported the options are: QI0SETPOINT, QV0SETPOINT"<<std::endl;
+		}
+	}
 	else
 	{	
 		//output if none of the commands are supported
 		std::cout << "Requested Command is not supported " << std::endl;
 	}
+	
 
 }
 
-void  LowVoltageCommand::PowerSupplyIPAddress( char* ipAddress ){
+void  LowVoltageCommand::PowerSupplyIPAddress( std::string ipAddress ){
 	/**Member function that sets the ipaddress and also 
 		initialises the socket
 	*/
@@ -309,33 +377,59 @@ void  LowVoltageCommand::PowerSupplyIPAddress( char* ipAddress ){
 	mp_lvComLink->InitialiseSocket(); // this returns true if the socket is successfully constructed - need to put into here some error handling
 }
 
-void LowVoltageCommand::Update(){
+void LowVoltageCommand::Update( bool debug ){
 	/** Server side update that allows all the current services to be queried and updated */
-	if( mp_lvComLink->ConnectToDevice() ){//Checks the socket
+	if( debug ){
+		m_voltage++;
+		mp_voltageService->updateService( m_voltage );
 
-		m_voltage = mp_lvComLink->VoltageReading();
-		if( m_voltage != -999 ){//error code if communication failed
-			mp_voltageService->updateService( m_voltage );
-		}
-		else{
-			//error handling
-		}
+		m_current++;
+		mp_currentService->updateService( m_current ); 
 
-		m_current = mp_lvComLink->CurrentReading();
-		if( m_current != -999 ){
-			mp_currentService->updateService( m_current ); 
-		}
-		else{
-			// error handling
-		}
-
-		m_powerState = mp_lvComLink->CurrentPowerState();
-		if( m_powerState != -999 ){
+		if( m_powerState == 1){
 			mp_powerStateService->updateService( m_powerState );
+			m_powerState = 0;
 		}
 		else{
-			//error handling
+			mp_powerStateService->updateService( m_powerState );
+			m_powerState = 0;
+		}
+
+		m_debug_state = false;
+
+	}
+	else{
+		if( mp_lvComLink->ConnectToDevice() ){//Checks the socket
+
+			m_voltage = mp_lvComLink->VoltageReading();
+			if( m_voltage != -999 ){//error code if communication failed
+				mp_voltageService->updateService( m_voltage );
+			}
+			else{
+				//error handling
+			}
+
+			m_current = mp_lvComLink->CurrentReading();
+			if( m_current != -999 ){
+				mp_currentService->updateService( m_current ); 
+			}
+			else{
+				// error handling
+			}
+
+
+			if( mp_lvComLink->ConnectToDevice() ){
+
+				m_powerState = mp_lvComLink->CurrentPowerState();
+				if( m_powerState != -999 ) {
+					mp_powerStateService->updateService( m_powerState );
+				}
+				else{
+					mp_powerStateService->updateService( m_powerState );
+
+				}
+			}
+
 		}
 	}
-
 }

@@ -8,7 +8,7 @@ class EventTimer : public DimTimer
 public:
 	EventTimer( int timeTilEvt );
 	virtual ~EventTimer(void);
-	void timeHandler();
+	void timeHandler( bool debug );
 	void StartTimer();
     void SetEvtObject( LowVoltageCommand* pointerToActionObject );
 

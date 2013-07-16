@@ -30,6 +30,12 @@
     <ClCompile Include="src\LVPowerSupplyServer.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\DIMServerConfigParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DIMServerInitialiser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inlcude\DIMServErrorHandler.h">
@@ -42,6 +48,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="inlcude\LowVoltageCommunication.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inlcude\DIMServerConfigParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inlcude\DIMServerInitialiser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

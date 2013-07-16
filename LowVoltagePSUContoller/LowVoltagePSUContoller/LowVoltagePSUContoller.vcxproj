@@ -11,6 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\DIMServerInitialiser.cpp" />
+    <ClCompile Include="src\DIMServerConfigParser.cpp" />
     <ClCompile Include="src\DIMServErrorHandler.cpp" />
     <ClCompile Include="src\EventTimer.cpp" />
     <ClCompile Include="src\LowVoltageCommand.cpp" />
@@ -18,6 +20,8 @@
     <ClCompile Include="src\LVPowerSupplyServer.cxx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="inlcude\DIMServerInitialiser.h" />
+    <ClInclude Include="inlcude\DIMServerConfigParser.h" />
     <ClInclude Include="inlcude\DIMServErrorHandler.h" />
     <ClInclude Include="inlcude\EventTimer.h" />
     <ClInclude Include="inlcude\LowVoltageCommand.h" />
@@ -52,12 +56,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <IncludePath>C:\Users\phrfp\Documents\Software\dim_v20r7\dim;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\phrfp\Documents\Software\dim_v20r7\bin32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\Users\phrfp\Documents\GitHub\LowVoltagePSUController\LowVoltagePSUContoller\LowVoltagePSUContoller\inlcude;C:\Users\phrfp\Documents\Software\dim_v20r7\dim;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\phrfp\Documents\Software\dim_v20r7\bin32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -89,6 +95,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>dim.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
